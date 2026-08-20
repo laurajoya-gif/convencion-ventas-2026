@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Ejecutivos Convención Nacional de Ventas 2026 - Seguros Bolívar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel Reading -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bolivar: {
+                            green: '#006837',        // Verde Institucional Seguros Bolívar
+                            darkGreen: '#004d28',    // Verde Oscuro para Hovers / Headers
+                            yellow: '#fdb813',       // Amarillo Bolívar Acceso / Destacados
+                            yellowHover: '#e0a00d',
+                            slicerBg: '#f2f8f4',
+                            slicerBorder: '#b3d8c3',
+                            rowGreen: '#e8f5e9',
+                            rowGreenBorder: '#a3e635',
+                            textDark: '#0f291e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700;800&display=swap');
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f5; }
+        
+        .slicer-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .slicer-scroll::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        .slicer-scroll::-webkit-scrollbar-thumb {
+            background: #006837;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col p-2 sm:p-4">
+
+    <!-- HEADER / ENCABEZADO CON BUSCADOR Y BOTONES DE CARGUE Y NUBE -->
+    <header class="bg-white border border-slate-300 rounded-xl shadow-sm mb-3 p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-bolivar-green text-bolivar-yellow p-2.5 rounded-lg shadow-md font-bold text-lg flex items-center justify-center border border-emerald-800">
+                <i data-lucide="shield-check" class="w-7 h-7"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    Ranking Ejecutivos Convención Nacional de Ventas 2026
+                </h1>
+                <p class="text-xs text-slate-500 flex items-center gap-2">
+                    <span>Consulta Interactiva de Resultados</span>
+                    <span>•</span>
+                    <span id="header-period-tag" class="font-bold text-bolivar-green bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Cierre Activo: Julio 2026</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Search Box -->
+            <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="global-search" oninput="applyFilters()" placeholder="Buscar funcionario o cargo..." 
+                       class="pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg w-44 sm:w-56 focus:bg-white focus:outline-none focus:ring-2 focus:ring-bolivar-green transition">
+            </div>
+
+            <!-- LOS 3 BOTONES DE CARGUE DE ARCHIVOS EXCEL -->
+            <div class="flex items-center gap-1.5 border-l border-slate-300 pl-2">
+                <!-- 1. Cargue General -->
+                <label class="cursor-pointer bg-bolivar-green hover:bg-bolivar-darkGreen text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm border border-emerald-800" title="Cargar archivo con el Ranking General">
+                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-bolivar-yellow"></i>
+                    <span class="hidden lg:inline">1. General</span>
+                    <input type="file" id="excel-general-input" accept=".xlsx, .xls" class="hidden" onchange="handleGeneralExcelUpload(event)">
+                </label>
+
+                <!-- 2. Cargue Detalle -->
+                <label class="cursor-pointer bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm border border-emerald-950" title="Cargar archivo con el Detalle Mes a Mes">
+                    <i data-lucide="table-properties" class="w-3.5 h-3.5 text-bolivar-yellow"></i>
+                    <span class="hidden lg:inline">2. Detalle</span>
+                    <input type="file" id="excel-detail-input" accept=".xlsx, .xls" class="hidden" onchange="handleDetailExcelUpload(event)">
+                </label>
+
+                <!-- 3. Cargue Directores Comerciales -->
+                <label class="cursor-pointer bg-emerald-950 hover:bg-black text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-sm border border-emerald-900" title="Cargar archivo con Directores Comerciales">
+                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-bolivar-yellow"></i>
+                    <span class="hidden lg:inline">3. DC</span>
+                    <input type="file" id="excel-dc-input" accept=".xlsx, .xls" class="hidden" onchange="handleDCExcelUpload(event)">
+                </label>
+            </div>
+
+            <!-- BOTÓN GUARDAR Y PUBLICAR EN NUBE -->
+            <button onclick="openPublishModal()" class="bg-bolivar-yellow hover:bg-bolivar-yellowHover text-slate-900 font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow border border-yellow-500">
+                <i data-lucide="cloud-upload" class="w-4 h-4 text-slate-900"></i>
+                <span>Publicar Cierre</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- CLOUD STATUS & PERIOD SELECTOR BAR -->
+    <div class="bg-emerald-900 text-white rounded-xl px-4 py-2 mb-3 flex flex-wrap items-center justify-between text-xs shadow-sm gap-2 border border-emerald-950">
+        <div class="flex items-center gap-3 flex-wrap">
+            <span class="flex items-center gap-1.5 font-bold">
+                <span id="cloud-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="cloud-status-text">Sincronizado en la nube</span>
+            </span>
+            <span class="text-emerald-300">|</span>
+            <span class="text-emerald-100 flex items-center gap-1">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-bolivar-yellow"></i>
+                <span>Tablero Compartido: Los cambios publicados son visibles para todos los usuarios.</span>
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <label for="period-selector" class="font-bold text-emerald-200 flex items-center gap-1 text-[11px]">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-bolivar-yellow"></i> Ver Período Guardado:
+            </label>
+            <select id="period-selector" onchange="changeStoredPeriod(this.value)" class="bg-emerald-950 text-white border border-emerald-700 rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-bolivar-yellow">
+                <option value="latest">📌 Último Cierre Publicado</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- SECTION FILTROS: VISTA DESPLEGABLE -->
+    <section class="mb-3">
+        <div id="view-dropdowns" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            
+            <!-- Dropdown Categoría -->
+            <div class="relative dropdown-container" id="dd-container-categoria">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
+                    <span class="flex items-center gap-1"><i data-lucide="filter" class="w-3 h-3 text-bolivar-green"></i> Categoría</span>
+                    <span id="dd-count-categoria" class="text-[10px] text-emerald-900 font-extrabold hidden bg-emerald-100 px-1.5 py-0.2 rounded-full border border-emerald-300">0</span>
+                </label>
+                <button onclick="toggleDropdownMenu('categoria', event)" id="dd-btn-categoria" type="button" 
+                        class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm flex items-center justify-between transition focus:ring-2 focus:ring-bolivar-green">
+                    <span id="dd-label-categoria" class="truncate">Todas las Categorías</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" id="dd-arrow-categoria"></i>
+                </button>
+                <div id="dd-menu-categoria" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-xl z-30 p-2 text-xs">
+                    <div class="p-1 border-b border-slate-100 mb-1 flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-500">Opciones</span>
+                        <button onclick="clearSlicer('categoria')" class="text-slate-400 hover:text-slate-600">Limpiar</button>
+                    </div>
+                    <div id="dd-options-categoria" class="max-h-52 overflow-y-auto slicer-scroll space-y-1"></div>
+                </div>
+            </div>
+
+            <!-- Dropdown Regional -->
+            <div class="relative dropdown-container" id="dd-container-regional">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
+                    <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3 text-bolivar-green"></i> Regional</span>
+                    <span id="dd-count-regional" class="text-[10px] text-emerald-900 font-extrabold hidden bg-emerald-100 px-1.5 py-0.2 rounded-full border border-emerald-300">0</span>
+                </label>
+                <button onclick="toggleDropdownMenu('regional', event)" id="dd-btn-regional" type="button" 
+                        class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm flex items-center justify-between transition focus:ring-2 focus:ring-bolivar-green">
+                    <span id="dd-label-regional" class="truncate">Todas las Regionales</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" id="dd-arrow-regional"></i>
+                </button>
+                <div id="dd-menu-regional" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-xl z-30 p-2 text-xs">
+                    <div class="p-1 border-b border-slate-100 mb-1 flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-500">Opciones</span>
+                        <button onclick="clearSlicer('regional')" class="text-slate-400 hover:text-slate-600">Limpiar</button>
+                    </div>
+                    <div id="dd-options-regional" class="max-h-52 overflow-y-auto slicer-scroll space-y-1"></div>
+                </div>
+            </div>
+
+            <!-- Dropdown Localidad -->
+            <div class="relative dropdown-container" id="dd-container-localidad">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
+                    <span class="flex items-center gap-1"><i data-lucide="building-2" class="w-3 h-3 text-bolivar-green"></i> Localidad</span>
+                    <span id="dd-count-localidad" class="text-[10px] text-emerald-900 font-extrabold hidden bg-emerald-100 px-1.5 py-0.2 rounded-full border border-emerald-300">0</span>
+                </label>
+                <button onclick="toggleDropdownMenu('localidad', event)" id="dd-btn-localidad" type="button" 
+                        class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm flex items-center justify-between transition focus:ring-2 focus:ring-bolivar-green">
+                    <span id="dd-label-localidad" class="truncate">Todas las Localidades</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" id="dd-arrow-localidad"></i>
+                </button>
+                <div id="dd-menu-localidad" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-xl z-30 p-2 text-xs">
+                    <div class="p-1 border-b border-slate-100 mb-1">
+                        <input type="text" id="dd-search-localidad" oninput="filterDropdownSearch('localidad')" placeholder="Filtrar localidad..." class="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded-md text-xs focus:outline-none focus:bg-white">
+                    </div>
+                    <div class="p-1 border-b border-slate-100 mb-1 flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-500">Opciones</span>
+                        <button onclick="clearSlicer('localidad')" class="text-slate-400 hover:text-slate-600">Limpiar</button>
+                    </div>
+                    <div id="dd-options-localidad" class="max-h-52 overflow-y-auto slicer-scroll space-y-1"></div>
+                </div>
+            </div>
+
+            <!-- Dropdown Cupo -->
+            <div class="relative dropdown-container" id="dd-container-cupo">
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
+                    <span class="flex items-center gap-1"><i data-lucide="award" class="w-3 h-3 text-bolivar-green"></i> Cupo</span>
+                    <span id="dd-count-cupo" class="text-[10px] text-emerald-900 font-extrabold hidden bg-emerald-100 px-1.5 py-0.2 rounded-full border border-emerald-300">0</span>
+                </label>
+                <button onclick="toggleDropdownMenu('cupo', event)" id="dd-btn-cupo" type="button" 
+                        class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm flex items-center justify-between transition focus:ring-2 focus:ring-bolivar-green">
+                    <span id="dd-label-cupo" class="truncate">Todos (SI / NO)</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform duration-200" id="dd-arrow-cupo"></i>
+                </button>
+                <div id="dd-menu-cupo" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-xl z-30 p-2 text-xs">
+                    <div class="p-1 border-b border-slate-100 mb-1 flex items-center justify-between text-[11px]">
+                        <span class="font-bold text-slate-500">Estado</span>
+                        <button onclick="clearSlicer('cupo')" class="text-slate-400 hover:text-slate-600">Limpiar</button>
+                    </div>
+                    <div id="dd-options-cupo" class="space-y-1"></div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- STATUS BAR & COUNTERS -->
+    <div class="bg-white border border-slate-300 rounded-xl px-4 py-2 mb-3 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+        <div class="flex items-center gap-4 flex-wrap">
+            <span class="font-bold text-slate-800">
+                Registros mostrados: <span id="record-count" class="text-bolivar-green font-extrabold text-sm">0</span> / <span id="total-count">0</span>
+            </span>
+            <span class="hidden sm:inline border-l border-slate-300 pl-4 text-emerald-800 font-semibold">
+                Con Cupo (SI): <span id="cupo-yes-count">0</span>
+            </span>
+            <span class="hidden sm:inline border-l border-slate-300 pl-4 text-slate-500 font-semibold">
+                Sin Cupo (NO): <span id="cupo-no-count">0</span>
+            </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Badges de Estado de Archivos Cargados -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <span id="badge-file-general" class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                    <i data-lucide="check-circle-2" class="w-3 h-3 text-bolivar-green"></i> General: Listo
+                </span>
+                <span id="badge-file-detail" class="bg-slate-100 text-slate-600 border border-slate-300 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                    <i data-lucide="info" class="w-3 h-3 text-slate-400"></i> Detalle: Listo
+                </span>
+                <span id="badge-file-dc" class="bg-slate-100 text-slate-600 border border-slate-300 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                    <i data-lucide="user-check" class="w-3 h-3 text-slate-400"></i> DC: Listo
+                </span>
+            </div>
+            
+            <div id="active-filters-tag" class="text-[11px] font-medium text-slate-500 italic border-l border-slate-200 pl-3">
+                Sin filtros aplicados
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast-notification" class="hidden fixed bottom-4 right-4 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 transition">
+        <div id="toast-icon" class="text-bolivar-yellow">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+        </div>
+        <div class="text-xs">
+            <p id="toast-title" class="font-bold text-white">Archivo Procesado</p>
+            <p id="toast-msg" class="text-slate-300 text-[11px]">Se actualizaron los datos correctamente.</p>
+        </div>
+        <button onclick="hideToast()" class="ml-2 text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
+
+    <!-- MAIN RANKING TABLE -->
+    <main class="bg-white border border-slate-300 rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
+        <div class="overflow-x-auto overflow-y-auto max-h-[600px]">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-bolivar-green text-white font-bold uppercase tracking-wider text-[11px] sticky top-0 z-10 shadow">
+                        <th class="py-3 px-3 border-r border-emerald-800 cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('categoria')">
+                            <div class="flex items-center justify-between">
+                                <span>CATEGORÍA QUE PARTICIPA</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('funcionario')">
+                            <div class="flex items-center justify-between">
+                                <span>FUNCIONARIO</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('cargo')">
+                            <div class="flex items-center justify-between">
+                                <span>CARGO</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('regional')">
+                            <div class="flex items-center justify-between">
+                                <span>REGIONAL</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('localidad')">
+                            <div class="flex items-center justify-between">
+                                <span>LOCALIDAD</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 text-right cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('cumpPond')">
+                            <div class="flex items-center justify-end gap-1">
+                                <span>%CUMP POND</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 text-center cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('posicion')">
+                            <div class="flex items-center justify-center gap-1">
+                                <span>POSICIÓN</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 border-r border-emerald-800 text-center cursor-pointer hover:bg-bolivar-darkGreen transition" onclick="sortTable('cupo')">
+                            <div class="flex items-center justify-center gap-1">
+                                <span>CUPO PARCIAL CONVENCIÓN</span>
+                                <i data-lucide="arrow-up-down" class="w-3 h-3 text-bolivar-yellow"></i>
+                            </div>
+                        </th>
+                        <th class="py-3 px-3 text-center">
+                            <span>DETALLE</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="divide-y divide-slate-200 bg-white">
+                    <!-- Dynamic rows inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- MODAL DETALLE MES A MES POR FUNCIONARIO -->
+    <div id="detail-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden">
+            
+            <!-- Header Modal -->
+            <div class="bg-bolivar-green text-white px-5 py-3.5 flex items-center justify-between shadow border-b border-emerald-800">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/10 p-2 rounded-lg backdrop-blur text-bolivar-yellow">
+                        <i data-lucide="user-check" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 id="modal-func-name" class="text-lg font-bold tracking-tight text-white">Nombre Funcionario</h2>
+                            <span id="modal-cupo-badge" class="px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-bolivar-yellow text-slate-900 shadow">SI</span>
+                        </div>
+                        <p id="modal-func-subtitle" class="text-xs text-emerald-100 flex items-center gap-3">
+                            <span>Cargo: <strong id="modal-cargo">-</strong></span>
+                            <span>•</span>
+                            <span>Regional: <strong id="modal-regional">-</strong></span>
+                            <span>•</span>
+                            <span>Localidad: <strong id="modal-localidad">-</strong></span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeDetailModal()" class="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- MÓDULO EXCLUSIVO DE DIRECTORES COMERCIALES -->
+            <div id="modal-dc-section" class="hidden bg-emerald-900 text-white p-4 border-b border-emerald-800">
+                <div class="flex items-center justify-between mb-2 pb-1 border-b border-emerald-700">
+                    <span class="text-xs font-bold uppercase tracking-wider text-bolivar-yellow flex items-center gap-1.5">
+                        <i data-lucide="award" class="w-4 h-4"></i> Indicadores de Gestión - Director Comercial
+                    </span>
+                    <span class="text-[11px] text-emerald-200 italic">Puntaje y Clasificación de Equipo</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-xs">
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex flex-col items-center text-center">
+                        <span class="text-[10px] text-emerald-200 font-semibold uppercase">Cant. Convencionistas</span>
+                        <span id="modal-dc-cant-conv" class="text-base font-extrabold text-white mt-0.5">0</span>
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex flex-col items-center text-center">
+                        <span class="text-[10px] text-emerald-200 font-semibold uppercase">% Convencionistas</span>
+                        <span id="modal-dc-pct-conv" class="text-base font-extrabold text-white mt-0.5">0.00%</span>
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex flex-col items-center text-center">
+                        <span class="text-[10px] text-emerald-200 font-semibold uppercase">Puntos % Cump Pond</span>
+                        <span id="modal-dc-pts-cump" class="text-base font-extrabold text-bolivar-yellow mt-0.5">0</span>
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex flex-col items-center text-center">
+                        <span class="text-[10px] text-emerald-200 font-semibold uppercase">Puntos Cant Conv.</span>
+                        <span id="modal-dc-pts-cant" class="text-base font-extrabold text-bolivar-yellow mt-0.5">0</span>
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex flex-col items-center text-center">
+                        <span class="text-[10px] text-emerald-200 font-semibold uppercase">Puntos % Conv.</span>
+                        <span id="modal-dc-pts-pct" class="text-base font-extrabold text-bolivar-yellow mt-0.5">0</span>
+                    </div>
+                    <div class="bg-bolivar-yellow text-slate-900 p-2.5 rounded-xl border border-yellow-300 flex flex-col items-center text-center shadow">
+                        <span class="text-[10px] font-black uppercase text-slate-800">Total Puntos</span>
+                        <span id="modal-dc-total-pts" class="text-base font-extrabold mt-0.5">0.0</span>
+                    </div>
+                    <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 flex flex-col items-center text-center">
+                        <span class="text-[10px] text-emerald-200 font-semibold uppercase">Cupo Convención</span>
+                        <span id="modal-dc-cupo" class="text-base font-extrabold text-bolivar-yellow mt-0.5">NO</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de Indicadores Clave YTD -->
+            <div class="bg-slate-50 border-b border-slate-200 p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <span class="text-slate-500 font-bold text-[10px] uppercase">Cumplimiento Ponderado</span>
+                    <span id="modal-kpi-cump" class="text-xl font-extrabold text-bolivar-green mt-0.5">0.0%</span>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <span class="text-slate-500 font-bold text-[10px] uppercase">Ranking Posición</span>
+                    <span id="modal-kpi-pos" class="text-xl font-extrabold text-slate-800 mt-0.5">#0</span>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <span class="text-slate-500 font-bold text-[10px] uppercase">Total Proyección YTD</span>
+                    <span id="modal-kpi-proy" class="text-xl font-extrabold text-slate-700 mt-0.5">0</span>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <span class="text-slate-500 font-bold text-[10px] uppercase">Total Real Ejecutado YTD</span>
+                    <span id="modal-kpi-real" class="text-xl font-extrabold text-emerald-700 mt-0.5">0</span>
+                </div>
+            </div>
+
+            <!-- Barra de Filtros Internos del Detalle -->
+            <div class="px-5 py-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center gap-1.5">
+                        <label class="font-bold text-slate-600 flex items-center gap-1">
+                            <i data-lucide="layers" class="w-3.5 h-3.5 text-bolivar-green"></i> Ramo:
+                        </label>
+                        <select id="modal-filter-ramo" onchange="filterModalDetailTable()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-2 focus:ring-bolivar-green">
+                            <option value="TODOS">Todos los Ramos</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        <label class="font-bold text-slate-600 flex items-center gap-1">
+                            <i data-lucide="tag" class="w-3.5 h-3.5 text-bolivar-green"></i> Tipo:
+                        </label>
+                        <select id="modal-filter-tipo" onchange="filterModalDetailTable()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:ring-2 focus:ring-bolivar-green">
+                            <option value="TODOS">Todos los Tipos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="setModalMetricView('AMBOS')" id="btn-metric-ambos" class="px-2.5 py-1 rounded-md text-xs font-bold transition bg-bolivar-green text-white shadow-sm">
+                        Proyección vs Real
+                    </button>
+                    <button onclick="setModalMetricView('REAL')" id="btn-metric-real" class="px-2.5 py-1 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+                        Solo Real
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Detalle Mes a Mes -->
+            <div class="overflow-x-auto overflow-y-auto max-h-[440px] p-4 bg-slate-50 flex-1">
+                <table class="w-full border-collapse text-xs bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-w-[1300px]">
+                    <thead>
+                        <tr class="bg-bolivar-darkGreen text-white font-bold text-[11px] uppercase tracking-wider sticky top-0 z-20">
+                            <th rowspan="2" class="py-2.5 px-3 border-r border-emerald-800 bg-bolivar-darkGreen text-center text-white">RAMO</th>
+                            <th rowspan="2" class="py-2.5 px-3 border-r border-emerald-800 bg-bolivar-darkGreen text-center text-white">TIPO</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center border-r border-emerald-800 bg-bolivar-green">ENE</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center border-r border-emerald-800 bg-bolivar-green">FEB</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center border-r border-emerald-800 bg-bolivar-green">MAR</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center border-r border-emerald-800 bg-bolivar-green">ABR</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center border-r border-emerald-800 bg-bolivar-green">MAY</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center border-r border-emerald-800 bg-bolivar-green">JUN</th>
+                            <th colspan="4" class="py-1.5 px-2 text-center bg-bolivar-green">JUL</th>
+                        </tr>
+                        <tr class="bg-emerald-800/90 text-white font-bold text-[10px] uppercase tracking-wider sticky top-[28px] z-20">
+                            <!-- ENE -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-200">% CUMP</th>
+                            <!-- FEB -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-200">% CUMP</th>
+                            <!-- MAR -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-200">% CUMP</th>
+                            <!-- ABR -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-200">% CUMP</th>
+                            <!-- MAY -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-200">% CUMP</th>
+                            <!-- JUN -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-200">% CUMP</th>
+                            <!-- JUL -->
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-emerald-100">PESO</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">PROY</th>
+                            <th class="py-1 px-1.5 text-center border-r border-emerald-700/60 text-white">REAL</th>
+                            <th class="py-1 px-1.5 text-center text-emerald-200">% CUMP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-detail-tbody" class="divide-y divide-slate-200 text-slate-700">
+                        <!-- Dynamic Monthly Breakdown Rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="bg-slate-100 border-t border-slate-200 px-5 py-3 flex items-center justify-between text-xs text-slate-500">
+                <span>Información Seguros Bolívar cortada al mes de <strong id="modal-footer-period">Julio 2026</strong></span>
+                <button onclick="closeDetailModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-1.5 rounded-lg transition shadow-sm">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PUBLICAR EN LA NUBE -->
+    <div id="publish-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-5 flex flex-col gap-4">
+            <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div class="bg-bolivar-green text-bolivar-yellow p-2 rounded-xl">
+                    <i data-lucide="cloud-upload" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Publicar Cierre en la Nube</h3>
+                    <p class="text-xs text-slate-500">Guarda la información actual para compartirla con todo el equipo.</p>
+                </div>
+            </div>
+
+            <div>
+                <label for="publish-period-name" class="block text-xs font-bold text-slate-700 mb-1">
+                    Nombre del Período / Cierre:
+                </label>
+                <input type="text" id="publish-period-name" value="Julio 2026" 
+                       class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-bolivar-green">
+            </div>
+
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-[11px] text-emerald-900 flex items-start gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-bolivar-green shrink-0 mt-0.5"></i>
+                <span>Al publicar, el ranking, desgloses y métricas de directores comerciales cargados quedarán sincronizados y disponibles para cualquier usuario que abra esta página.</span>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button onclick="closePublishModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">
+                    Cancelar
+                </button>
+                <button onclick="confirmPublishReport()" class="bg-bolivar-green hover:bg-bolivar-darkGreen text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4 text-bolivar-yellow"></i>
+                    <span>Confirmar y Publicar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE CLOUD PERSISTENCE & APPLICATION ENGINE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration & Global Variables
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        let activePeriodName = "Julio 2026";
+
+        // Initial Baseline Dataset
+        const INITIAL_DATA = [
+            { categoria: "ASESOR RELACIONAMIENTO AFINES", funcionario: "ZARET VANESSA LAVERDE ALVAREZ", cargo: "ASESOR RELACIONAMIENTO AFINES", regional: "BOGOTÁ", localidad: "GH RELACIONAMIENTO BOGOTÁ", cumpPond: 173.9, posicion: 1, cupo: "SI" },
+            { categoria: "ASESOR RELACIONAMIENTO AFINES", funcionario: "LADY VIVIANA QUINTERO SANCHEZ", cargo: "ASESOR RELACIONAMIENTO AFINES", regional: "BOGOTÁ", localidad: "GH RELACIONAMIENTO BOGOTÁ", cumpPond: 127.1, posicion: 2, cupo: "SI" },
+            { categoria: "ASESOR RELACIONAMIENTO AFINES", funcionario: "DARLYN TATIANA QUINTERO LEAL", cargo: "ASESOR RELACIONAMIENTO AFINES", regional: "CENTRO", localidad: "GH BUCARAMANGA", cumpPond: 126.1, posicion: 3, cupo: "SI" },
+            { categoria: "ASESOR RELACIONAMIENTO AFINES", funcionario: "GINNA MARCELA ROJAS CIFUENTES", cargo: "ASESOR RELACIONAMIENTO AFINES", regional: "CENTRO", localidad: "GH VILLAVICENCIO", cumpPond: 118.3, posicion: 4, cupo: "NO" },
+            { categoria: "DIRECTOR COMERCIAL GRUPOS HOMOGENEOS", funcionario: "YURLEY PAOLA ROMERO CACUA", cargo: "DIRECTOR COMERCIAL GRUPOS HOMOGENEOS", regional: "CENTRO", localidad: "GH BUCARAMANGA", cumpPond: 121.8, posicion: 1, cupo: "SI" },
+            { categoria: "DIRECTOR COMERCIAL GRUPOS HOMOGENEOS", funcionario: "NATALIA SINISTERRA CLAVIJO", cargo: "DIRECTOR COMERCIAL GRUPOS HOMOGENEOS", regional: "OCCIDENTE", localidad: "GH CALI", cumpPond: 121.7, posicion: 2, cupo: "NO" },
+            { categoria: "DIRECTOR DE VENTAS AFINES", funcionario: "RICARDO JOSE GOMEZ PRADA", cargo: "DIRECTOR DE VENTAS AFINES", regional: "EJE CAFETERO", localidad: "GH ARMENIA", cumpPond: 152.1, posicion: 1, cupo: "SI" },
+            { categoria: "DIRECTOR DE VENTAS EDUCADORES", funcionario: "GLORIA INES RAMIREZ LONDOÑO", cargo: "DIRECTOR DE VENTAS EDUCADORES", regional: "ANTIOQUIA", localidad: "GH AFINES BOGOTÁ", cumpPond: 110.2, posicion: 2, cupo: "NO" }
+        ];
+
+        let masterData = [...INITIAL_DATA];
+        let filteredData = [];
+        let selectedFilters = {
+            categoria: new Set(),
+            regional: new Set(),
+            localidad: new Set(),
+            cupo: new Set()
+        };
+        
+        let currentSort = { column: 'posicion', asc: true };
+        let currentModalFuncionario = null;
+        let monthlyDetailMap = {};
+        let dcDetailMap = {};
+        let modalMetricView = 'AMBOS';
+
+        // Initial Demo Dataset for Directors
+        dcDetailMap["YURLEY PAOLA ROMERO CACUA"] = {
+            cantConvencionistas: 34,
+            pctConvencionistas: 1.39,
+            puntosCumpPond: 6,
+            puntosCantConv: 6,
+            puntosPctConv: 3.5,
+            totalPuntos: 15.5,
+            cupoConvencion: "SI"
+        };
+        dcDetailMap["NATALIA SINISTERRA CLAVIJO"] = {
+            cantConvencionistas: 4,
+            pctConvencionistas: 3.38,
+            puntosCumpPond: 5,
+            puntosCantConv: 1,
+            puntosPctConv: 5.0,
+            totalPuntos: 11.0,
+            cupoConvencion: "NO"
+        };
+
+        function normalizeName(str) {
+            if (!str) return "";
+            return String(str)
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toUpperCase();
+        }
+
+        function getVal(row, possibleKeys) {
+            if (!row) return "";
+            for (let pKey of possibleKeys) {
+                const cleanPKey = String(pKey).toLowerCase().replace(/[^a-z0-9]/g, '');
+                for (let actualKey of Object.keys(row)) {
+                    const cleanActual = String(actualKey).toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (cleanActual === cleanPKey && row[actualKey] !== undefined && row[actualKey] !== null && row[actualKey] !== '') {
+                        return row[actualKey];
+                    }
+                }
+            }
+            return "";
+        }
+
+        function parseNumericVal(val) {
+            if (val === null || val === undefined || val === "") return 0;
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            let str = String(val).trim().replace(/[\$\s]/g, '');
+            if (!str) return 0;
+            
+            if (str.includes('.') && str.includes(',')) {
+                if (str.lastIndexOf('.') > str.lastIndexOf(',')) {
+                    str = str.replace(/,/g, '');
+                } else {
+                    str = str.replace(/\./g, '').replace(',', '.');
+                }
+            } else if ((str.match(/\./g) || []).length > 1) {
+                str = str.replace(/\./g, '');
+            } else if ((str.match(/,/g) || []).length > 1) {
+                str = str.replace(/,/g, '');
+            } else if (str.includes(',')) {
+                let parts = str.split(',');
+                if (parts[1] && parts[1].length === 3) {
+                    str = str.replace(',', '');
+                } else {
+                    str = str.replace(',', '.');
+                }
+            }
+            let clean = str.replace(/[^0-9.-]/g, '');
+            let num = parseFloat(clean);
+            return isNaN(num) ? 0 : num;
+        }
+
+        // Initialize Firebase Authentication & Realtime Listeners
+        async function initCloudSync() {
+            if (!firebaseConfig) {
+                console.warn("Firebase Config not present. Running in local session mode.");
+                updateCloudStatusUI("offline");
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // RULE 3: Auth First
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+
+                if (currentUser) {
+                    setupFirestoreListeners();
+                }
+            } catch (err) {
+                console.error("Cloud connection error:", err);
+                updateCloudStatusUI("offline");
+            }
+        }
+
+        // Listen for realtime cloud updates from other users or published closures
+        function setupFirestoreListeners() {
+            if (!db || !currentUser) return;
+
+            // RULE 1: Strict Public Data Path
+            const latestDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reports', 'latest');
+
+            onSnapshot(latestDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cloudData = docSnap.data();
+                    if (cloudData.masterData && Array.isArray(cloudData.masterData)) {
+                        masterData = cloudData.masterData;
+                    }
+                    if (cloudData.monthlyDetailMap) {
+                        monthlyDetailMap = cloudData.monthlyDetailMap;
+                    }
+                    if (cloudData.dcDetailMap) {
+                        dcDetailMap = cloudData.dcDetailMap;
+                    }
+                    if (cloudData.periodName) {
+                        activePeriodName = cloudData.periodName;
+                        const pTag = document.getElementById('header-period-tag');
+                        if (pTag) pTag.innerText = `Cierre Activo: ${activePeriodName}`;
+                    }
+                    
+                    initializeDashboard();
+                    updateCloudStatusUI("synced");
+                }
+            }, (error) => {
+                console.error("Firestore onSnapshot error:", error);
+                updateCloudStatusUI("offline");
+            });
+
+            // Fetch stored monthly reports list
+            const reportsCol = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
+            onSnapshot(reportsCol, (snapshot) => {
+                const periodSelect = document.getElementById('period-selector');
+                if (!periodSelect) return;
+                
+                let html = `<option value="latest">📌 Último Cierre Publicado (${activePeriodName})</option>`;
+                snapshot.forEach(d => {
+                    if (d.id !== 'latest') {
+                        const pData = d.data();
+                        const pName = pData.periodName || d.id;
+                        html += `<option value="${d.id}">${pName}</option>`;
+                    }
+                });
+                periodSelect.innerHTML = html;
+            }, (err) => console.warn("Error reading reports collection:", err));
+        }
+
+        function updateCloudStatusUI(state) {
+            const dot = document.getElementById('cloud-status-dot');
+            const text = document.getElementById('cloud-status-text');
+            if (!dot || !text) return;
+
+            if (state === 'saving') {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-bolivar-yellow animate-ping";
+                text.innerText = "Guardando en la nube...";
+            } else if (state === 'synced') {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                text.innerText = `Sincronizado en la nube (${activePeriodName})`;
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400";
+                text.innerText = "Modo Sesión Local";
+            }
+        }
+
+        window.openPublishModal = function() {
+            const modal = document.getElementById('publish-modal');
+            const input = document.getElementById('publish-period-name');
+            if (input) input.value = activePeriodName || "Julio 2026";
+            if (modal) modal.classList.remove('hidden');
+        };
+
+        window.closePublishModal = function() {
+            const modal = document.getElementById('publish-modal');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        window.confirmPublishReport = async function() {
+            const input = document.getElementById('publish-period-name');
+            const periodName = input ? input.value.trim() : "Julio 2026";
+            
+            if (!periodName) {
+                showToast("Campo Requerido", "Por favor ingresa un nombre de período.", "error");
+                return;
+            }
+
+            closePublishModal();
+
+            if (!db || !currentUser) {
+                activePeriodName = periodName;
+                const pTag = document.getElementById('header-period-tag');
+                if (pTag) pTag.innerText = `Cierre Activo: ${activePeriodName}`;
+                showToast("Guardado Local", "Sincronizado en sesión local.", "warning");
+                return;
+            }
+
+            try {
+                updateCloudStatusUI("saving");
+
+                const reportPayload = {
+                    masterData: masterData,
+                    monthlyDetailMap: monthlyDetailMap,
+                    dcDetailMap: dcDetailMap,
+                    periodName: periodName,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: currentUser.uid
+                };
+
+                // RULE 1: Strict Paths
+                const latestDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reports', 'latest');
+                await setDoc(latestDocRef, reportPayload);
+
+                const periodDocId = periodName.replace(/[^a-zA-Z0-9]/g, '_');
+                const historyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reports', periodDocId);
+                await setDoc(historyDocRef, reportPayload);
+
+                activePeriodName = periodName;
+                const pTag = document.getElementById('header-period-tag');
+                if (pTag) pTag.innerText = `Cierre Activo: ${activePeriodName}`;
+
+                updateCloudStatusUI("synced");
+                showToast("Publicación Exitosa", `El cierre de ${periodName} ha sido guardado en la nube para todos los usuarios.`);
+            } catch (err) {
+                console.error("Error al publicar en la nube:", err);
+                updateCloudStatusUI("offline");
+                showToast("Error de Publicación", "No se pudo sincronizar en la nube.", "error");
+            }
+        };
+
+        window.changeStoredPeriod = function(docId) {
+            if (!db || !currentUser) return;
+            const targetDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reports', docId);
+
+            onSnapshot(targetDocRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.masterData) masterData = data.masterData;
+                    if (data.monthlyDetailMap) monthlyDetailMap = data.monthlyDetailMap;
+                    if (data.dcDetailMap) dcDetailMap = data.dcDetailMap;
+                    if (data.periodName) {
+                        activePeriodName = data.periodName;
+                        const pTag = document.getElementById('header-period-tag');
+                        if (pTag) pTag.innerText = `Cierre Activo: ${activePeriodName}`;
+                    }
+                    initializeDashboard();
+                    showToast("Período Cargado", `Se visualizan los datos de ${activePeriodName}.`);
+                }
+            });
+        };
+
+        window.onload = function() {
+            lucide.createIcons();
+            masterData = [...INITIAL_DATA];
+            initializeDashboard();
+            initCloudSync();
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown-container')) {
+                    closeAllDropdowns();
+                }
+            });
+        };
+
+        function initializeDashboard() {
+            renderSlicersAndDropdowns();
+            applyFilters();
+        }
+
+        window.handleGeneralExcelUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    let sheetName = workbook.SheetNames.find(n => {
+                        const upper = n.toUpperCase();
+                        return upper.includes("GENERAL") || upper.includes("INFORME") || upper.includes("RANKING") || upper.includes("EJECUTIVO") || upper.includes("HOJA");
+                    }) || workbook.SheetNames[0];
+
+                    const sheet = workbook.Sheets[sheetName];
+                    const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+                    let headerIdx = 0;
+                    for (let i = 0; i < Math.min(rawRows.length, 20); i++) {
+                        const rowStr = rawRows[i].map(c => String(c).toUpperCase()).join(" ");
+                        if (rowStr.includes("FUNCIONARIO") || rowStr.includes("CATEGOR") || rowStr.includes("CARGO")) {
+                            headerIdx = i;
+                            break;
+                        }
+                    }
+
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { range: headerIdx, defval: "" });
+
+                    if (!jsonData || jsonData.length === 0) {
+                        showToast("Error en archivo", "El archivo general no contiene filas válidas.", "error");
+                        return;
+                    }
+
+                    const parsedData = jsonData.map((row, idx) => {
+                        let rawPond = getVal(row, ["%CUMP POND", "CUMP POND", "% CUMP POND", "%CUMP PONDERADO", "% CUMP PONDERADO", "CUMPLIMIENTO", "%CUMPLIMIENTO", "CUMP_POND"]);
+                        let numPond = 0;
+                        if (typeof rawPond === 'number') {
+                            numPond = rawPond <= 5 ? rawPond * 100 : rawPond;
+                        } else if (typeof rawPond === 'string') {
+                            let clean = rawPond.replace('%', '').replace(',', '.').trim();
+                            numPond = parseFloat(clean) || 0;
+                        }
+
+                        let rawPos = getVal(row, ["POSICION", "POSICIÓN", "RANKING", "POS"]);
+                        let posVal = parseInt(rawPos) || (idx + 1);
+
+                        return {
+                            categoria: String(getVal(row, ["CATEGORIA QUE PARTICIPA", "CATEGORÍA QUE PARTICIPA", "CATEGORIA", "CATEGORÍA", "CATEGORIA_PARTICIPA"])).trim() || "GENERAL",
+                            funcionario: String(getVal(row, ["FUNCIONARIO", "NOMBRE", "EJECUTIVO", "NOMBRE_FUNCIONARIO"])).trim(),
+                            cargo: String(getVal(row, ["CARGO", "PUESTO"])).trim() || "ASESOR",
+                            regional: String(getVal(row, ["REGIONAL", "ZONA", "REG"])).trim() || "BOGOTÁ",
+                            localidad: String(getVal(row, ["LOCALIDAD", "CIUDAD", "OFICINA"])).trim() || "PRINCIPAL",
+                            cumpPond: Number(numPond.toFixed(1)),
+                            posicion: posVal,
+                            cupo: String(getVal(row, ["CUPO PARCIAL CONVENCIÓN", "CUPO PARCIAL CONVENCION", "CUPO PARCIAL", "CUPO", "CLASIFICADO", "CUPO_CONVENCION"])).trim().toUpperCase() || "NO"
+                        };
+                    }).filter(d => d.funcionario.length > 0);
+
+                    if (parsedData.length > 0) {
+                        masterData = parsedData;
+                        selectedFilters = { categoria: new Set(), regional: new Set(), localidad: new Set(), cupo: new Set() };
+                        initializeDashboard();
+                        
+                        const badgeGen = document.getElementById('badge-file-general');
+                        if (badgeGen) {
+                            badgeGen.className = "bg-emerald-500 text-white border border-emerald-600 px-2.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm";
+                            badgeGen.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 text-bolivar-yellow"></i> General: Listo (${masterData.length})`;
+                        }
+
+                        showToast("Ranking General Cargado", `Se cargaron ${masterData.length} funcionarios correctamente.`);
+                    }
+                } catch (err) {
+                    console.error("Error al procesar Excel General:", err);
+                    showToast("Error al leer Excel General", "Verifique el formato del archivo.", "error");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.handleDetailExcelUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    
+                    let sheetName = workbook.SheetNames.find(n => {
+                        const upper = n.toUpperCase();
+                        return upper.includes("DETALLE") || upper.includes("PONDERADO") || upper.includes("MES") || upper.includes("HOJA");
+                    }) || workbook.SheetNames[0];
+
+                    const sheet = workbook.Sheets[sheetName];
+                    const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+                    let headerIdx = 0;
+                    for (let i = 0; i < Math.min(rawRows.length, 20); i++) {
+                        const rowStr = rawRows[i].map(c => String(c).toUpperCase()).join(" ");
+                        if (rowStr.includes("FUNCIONARIO") || rowStr.includes("NOMBRE") || rowStr.includes("RAMO") || rowStr.includes("TIPO") || rowStr.includes("META") || rowStr.includes("PROD")) {
+                            headerIdx = i;
+                            break;
+                        }
+                    }
+
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { range: headerIdx, defval: "" });
+
+                    if (!jsonData || jsonData.length === 0) {
+                        showToast("Error en archivo", "El archivo de detalle está vacío.", "error");
+                        return;
+                    }
+
+                    const tempMap = {};
+
+                    const getMonthIndex = (mesVal) => {
+                        if (!mesVal && mesVal !== 0) return -1;
+                        if (mesVal instanceof Date) {
+                            const m = mesVal.getMonth();
+                            if (m >= 0 && m <= 6) return m;
+                        }
+                        const s = String(mesVal).trim().toUpperCase();
+
+                        if (s.includes("2026-01") || s.includes("/01/") || s.includes("-01-") || s.includes("ENE") || s.includes("JAN")) return 0;
+                        if (s.includes("2026-02") || s.includes("/02/") || s.includes("-02-") || s.includes("FEB")) return 1;
+                        if (s.includes("2026-03") || s.includes("/03/") || s.includes("-03-") || s.includes("MAR")) return 2;
+                        if (s.includes("2026-04") || s.includes("/04/") || s.includes("-04-") || s.includes("ABR") || s.includes("APR")) return 3;
+                        if (s.includes("2026-05") || s.includes("/05/") || s.includes("-05-") || s.includes("MAY")) return 4;
+                        if (s.includes("2026-06") || s.includes("/06/") || s.includes("-06-") || s.includes("JUN")) return 5;
+                        if (s.includes("2026-07") || s.includes("/07/") || s.includes("-07-") || s.includes("JUL")) return 6;
+
+                        const num = parseInt(s, 10);
+                        if (!isNaN(num) && num >= 1 && num <= 7) return num - 1;
+                        return -1;
+                    };
+
+                    jsonData.forEach(row => {
+                        const funcName = String(getVal(row, ["FUNCIONARIO", "FUNCIONARIO2", "NOMBRE", "EJECUTIVO"])).trim();
+                        if (!funcName) return;
+
+                        const normKey = normalizeName(funcName);
+                        const ramo = String(getVal(row, ["RAMO", "RAMO / LÍNEA", "LINEA", "PRODUCTO"])).trim().toUpperCase() || "VARIOS";
+                        const tipo = String(getVal(row, ["TIPO", "TIPO_MOVIMIENTO"])).trim().toUpperCase() || "NN";
+
+                        if (!tempMap[normKey]) tempMap[normKey] = [];
+                        if (!tempMap[funcName]) tempMap[funcName] = tempMap[normKey];
+
+                        let existingEntry = tempMap[normKey].find(e => e.ramo === ramo && e.tipo === tipo);
+                        if (!existingEntry) {
+                            existingEntry = { 
+                                ramo: ramo, 
+                                tipo: tipo, 
+                                proyeccion: [0,0,0,0,0,0,0], 
+                                real: [0,0,0,0,0,0,0],
+                                peso: [50,50,50,50,50,50,50]
+                            };
+                            tempMap[normKey].push(existingEntry);
+                        }
+
+                        const mesRaw = getVal(row, ["MES", "MES VALID", "AÑO MES VALID", "PERIODO"]);
+                        const monthIdx = getMonthIndex(mesRaw);
+
+                        if (monthIdx >= 0 && monthIdx < 7) {
+                            const metaVal = parseNumericVal(getVal(row, ["META", "PROYECCIÓN", "PROYECCION", "PROY", "PRESUPUESTO"]));
+                            const prodVal = parseNumericVal(getVal(row, ["PROD", "REAL", "PRODUCCIÓN", "PRODUCCION", "EJECUTADO"]));
+                            
+                            let pesoVal = parseNumericVal(getVal(row, ["PESOS", "PESOS ORIG", "PESO", "% PESO", "PONDERACION"]));
+                            if (pesoVal > 0 && pesoVal <= 1) pesoVal = pesoVal * 100;
+
+                            existingEntry.proyeccion[monthIdx] = metaVal;
+                            existingEntry.real[monthIdx] = prodVal;
+                            if (pesoVal > 0) existingEntry.peso[monthIdx] = pesoVal;
+                        }
+                    });
+
+                    if (Object.keys(tempMap).length > 0) {
+                        monthlyDetailMap = tempMap;
+
+                        const badgeDet = document.getElementById('badge-file-detail');
+                        if (badgeDet) {
+                            badgeDet.className = "bg-emerald-500 text-white border border-emerald-600 px-2.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm";
+                            badgeDet.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 text-bolivar-yellow"></i> Detalle: Listo`;
+                        }
+
+                        showToast("Detalle Mes a Mes Cargado", `Se actualizaron los desgloses por ramo y tipo.`);
+
+                        if (currentModalFuncionario) {
+                            openDetailModal(currentModalFuncionario.funcionario);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error al procesar Excel Detalle:", err);
+                    showToast("Error al leer Excel Detalle", "Verifique la estructura del archivo.", "error");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.handleDCExcelUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    let sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+                    let headerIdx = 0;
+                    for (let i = 0; i < Math.min(rawRows.length, 20); i++) {
+                        const rowStr = rawRows[i].map(c => String(c).toUpperCase()).join(" ");
+                        if (rowStr.includes("FUNCIONARIO") || rowStr.includes("DIRECTOR") || rowStr.includes("CONVENCIONISTAS")) {
+                            headerIdx = i;
+                            break;
+                        }
+                    }
+
+                    const jsonData = XLSX.utils.sheet_to_json(sheet, { range: headerIdx, defval: "" });
+
+                    if (!jsonData || jsonData.length === 0) {
+                        showToast("Error en archivo DC", "El archivo de Directores Comerciales no contiene filas válidas.", "error");
+                        return;
+                    }
+
+                    const tempDCMap = {};
+
+                    jsonData.forEach(row => {
+                        const funcName = String(getVal(row, ["FUNCIONARIO", "DIRECTOR", "NOMBRE", "DIRECTOR COMERCIAL"])).trim();
+                        if (!funcName) return;
+
+                        const normKey = normalizeName(funcName);
+
+                        let rawPctConv = getVal(row, ["% CONVENCIONISTAS", "%CONVENCIONISTAS", "% CONVENCIONISTA"]);
+                        let numPctConv = 0;
+                        if (typeof rawPctConv === 'number') {
+                            numPctConv = rawPctConv <= 1 ? rawPctConv * 100 : rawPctConv;
+                        } else if (typeof rawPctConv === 'string') {
+                            numPctConv = parseFloat(rawPctConv.replace('%', '').replace(',', '.')) || 0;
+                        }
+
+                        tempDCMap[normKey] = {
+                            cantConvencionistas: parseNumericVal(getVal(row, ["CANT CONVENCIONISTAS", "CANT_CONVENCIONISTAS", "CANT CONV"])),
+                            pctConvencionistas: Number(numPctConv.toFixed(2)),
+                            puntosCumpPond: parseNumericVal(getVal(row, ["PUNTOS %CUMP POND", "PUNTOS % CUMP POND", "PUNTOS CUMP POND"])),
+                            puntosCantConv: parseNumericVal(getVal(row, ["PUNTOS CANT CONVENCIONISTAS", "PUNTOS CANT CONV"])),
+                            puntosPctConv: parseNumericVal(getVal(row, ["PUNTOS % CONVENCIONISTAS", "PUNTOS % CONV"])),
+                            totalPuntos: parseNumericVal(getVal(row, ["TOTAL PUNTOS", "PUNTOS", "PUNTOS TOTALES"])),
+                            cupoConvencion: String(getVal(row, ["CUPO CONVENCIÓN", "CUPO CONVENCION", "CUPO"])).trim().toUpperCase() || "NO"
+                        };
+                        tempDCMap[funcName] = tempDCMap[normKey];
+                    });
+
+                    if (Object.keys(tempDCMap).length > 0) {
+                        dcDetailMap = { ...dcDetailMap, ...tempDCMap };
+
+                        const badgeDC = document.getElementById('badge-file-dc');
+                        if (badgeDC) {
+                            badgeDC.className = "bg-emerald-500 text-white border border-emerald-600 px-2.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm";
+                            badgeDC.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 text-bolivar-yellow"></i> DC: Listo`;
+                        }
+
+                        showToast("Directores Comerciales Cargados", "Se actualizaron los indicadores de la fuerza de ventas.");
+
+                        if (currentModalFuncionario) {
+                            openDetailModal(currentModalFuncionario.funcionario);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error al procesar Excel DC:", err);
+                    showToast("Error al leer Excel DC", "Verifique el formato del archivo.", "error");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        function generateMonthlyDetailsForFunc(funcData) {
+            const isZaret = normalizeName(funcData.funcionario).includes("ZARET");
+            
+            if (isZaret) {
+                return [
+                    {
+                        ramo: "AFINES",
+                        tipo: "NN",
+                        proyeccion: [23220025, 32267950, 52609375, 51489202, 51551886, 54351107, 54202893],
+                        real: [36016938, -12061479, 138697153, 182379936, 206377293, 130083684, 113738949],
+                        peso: [50, 50, 50, 50, 50, 50, 50]
+                    },
+                    {
+                        ramo: "AFINES",
+                        tipo: "RN",
+                        proyeccion: [167736169, 79555051, 117724308, 229146998, 63110950, 131296244, 210118967],
+                        real: [184298183, 66376376, 78118549, 228067135, 68942769, 134589007, 229340066],
+                        peso: [50, 50, 50, 50, 50, 50, 50]
+                    }
+                ];
+            }
+
+            const ramos = ["AFINES", "VIDA INDIVIDUAL", "SALUD Y ACCIDENTES", "AUTOS Y HOGAR"];
+            const tipos = ["NN", "RN"];
+            const result = [];
+
+            ramos.forEach((ramo, idx) => {
+                tipos.forEach(tipo => {
+                    const baseProy = (idx + 1) * 15000000;
+                    const multiplier = (funcData.cumpPond || 100) / 100;
+
+                    const proy = [1.0, 1.05, 1.1, 1.08, 1.15, 1.2, 1.25].map(m => Math.round(baseProy * m));
+                    const real = proy.map(v => Math.round(v * multiplier * 0.98));
+                    const peso = [50, 50, 50, 50, 50, 50, 50];
+
+                    result.push({
+                        ramo: ramo,
+                        tipo: tipo,
+                        proyeccion: proy,
+                        real: real,
+                        peso: peso
+                    });
+                });
+            });
+
+            return result;
+        }
+
+        window.applyFilters = function() {
+            const searchTerm = (document.getElementById('global-search') ? document.getElementById('global-search').value : '').toLowerCase().trim();
+
+            filteredData = masterData.filter(item => {
+                if (selectedFilters.categoria.size > 0 && !selectedFilters.categoria.has(item.categoria)) return false;
+                if (selectedFilters.regional.size > 0 && !selectedFilters.regional.has(item.regional)) return false;
+                if (selectedFilters.localidad.size > 0 && !selectedFilters.localidad.has(item.localidad)) return false;
+                if (selectedFilters.cupo.size > 0 && !selectedFilters.cupo.has(String(item.cupo).toUpperCase())) return false;
+
+                if (searchTerm) {
+                    const func = (item.funcionario || '').toLowerCase();
+                    const cargo = (item.cargo || '').toLowerCase();
+                    const cat = (item.categoria || '').toLowerCase();
+                    const reg = (item.regional || '').toLowerCase();
+                    const loc = (item.localidad || '').toLowerCase();
+                    if (!func.includes(searchTerm) && !cargo.includes(searchTerm) && !cat.includes(searchTerm) && !reg.includes(searchTerm) && !loc.includes(searchTerm)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            filteredData.sort((a, b) => {
+                let valA = a[currentSort.column];
+                let valB = b[currentSort.column];
+
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return currentSort.asc ? -1 : 1;
+                if (valA > valB) return currentSort.asc ? 1 : -1;
+                return 0;
+            });
+
+            updateDropdownLabels();
+            renderTable();
+            updateCounters();
+        };
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400 italic">No se encontraron registros que coincidan con los filtros seleccionados.</td></tr>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const tr = document.createElement('tr');
+                const isCupo = String(item.cupo).trim().toUpperCase() === 'SI';
+                tr.className = isCupo ? "bg-emerald-50/70 hover:bg-emerald-100/80 transition" : "hover:bg-slate-50 transition";
+                
+                const cumpFormatted = typeof item.cumpPond === 'number' 
+                    ? item.cumpPond.toFixed(1) + '%' 
+                    : item.cumpPond;
+
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 border-r border-slate-200 font-semibold text-slate-700">${item.categoria}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 font-bold text-slate-900">${item.funcionario}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-slate-600">${item.cargo}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-slate-600">${item.regional}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-slate-600">${item.localidad}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-right font-extrabold ${item.cumpPond >= 100 ? 'text-bolivar-green' : 'text-slate-800'}">${cumpFormatted}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-center font-bold text-slate-700">#${item.posicion}</td>
+                    <td class="py-2.5 px-3 border-r border-slate-200 text-center font-bold">
+                        <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${isCupo ? 'bg-bolivar-yellow text-slate-900 shadow-sm' : 'bg-slate-200 text-slate-600'}">
+                            ${item.cupo}
+                        </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <button onclick="openDetailModal('${item.funcionario.replace(/'/g, "\\'")}')" 
+                                class="bg-bolivar-green hover:bg-bolivar-darkGreen text-white px-2.5 py-1 rounded-lg font-bold text-[11px] shadow-sm flex items-center gap-1 mx-auto transition">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 text-bolivar-yellow"></i>
+                            <span>Ver Detalle</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        window.openDetailModal = function(funcName) {
+            const normKey = normalizeName(funcName);
+            const funcData = masterData.find(d => normalizeName(d.funcionario) === normKey) || {
+                funcionario: funcName,
+                cargo: "ASESOR",
+                regional: "N/A",
+                localidad: "N/A",
+                cumpPond: 0,
+                posicion: "-",
+                cupo: "NO"
+            };
+
+            currentModalFuncionario = funcData;
+
+            if (!monthlyDetailMap[funcName] && !monthlyDetailMap[normKey]) {
+                const generatedDetails = generateMonthlyDetailsForFunc(funcData);
+                monthlyDetailMap[funcName] = generatedDetails;
+                monthlyDetailMap[normKey] = generatedDetails;
+            }
+
+            const details = monthlyDetailMap[funcName] || monthlyDetailMap[normKey] || [];
+
+            document.getElementById('modal-func-name').innerText = funcData.funcionario;
+            document.getElementById('modal-cargo').innerText = funcData.cargo || '-';
+            document.getElementById('modal-regional').innerText = funcData.regional || '-';
+            document.getElementById('modal-localidad').innerText = funcData.localidad || '-';
+            document.getElementById('modal-footer-period').innerText = activePeriodName;
+
+            const cupoBadge = document.getElementById('modal-cupo-badge');
+            const isYes = String(funcData.cupo).trim().toUpperCase() === 'SI';
+            cupoBadge.innerText = isYes ? 'CUPO CONVENCIÓN: SI' : 'CUPO CONVENCIÓN: NO';
+            cupoBadge.className = isYes 
+                ? "px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-bolivar-yellow text-slate-900 shadow"
+                : "px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-slate-300 text-slate-800 shadow";
+
+            const formattedCump = typeof funcData.cumpPond === 'number' ? funcData.cumpPond.toFixed(1) + '%' : funcData.cumpPond;
+            document.getElementById('modal-kpi-cump').innerText = formattedCump;
+            document.getElementById('modal-kpi-pos').innerText = `#${funcData.posicion || '-'}`;
+
+            // Check if Director Comercial
+            const dcData = dcDetailMap[normKey] || dcDetailMap[funcName];
+            const dcSection = document.getElementById('modal-dc-section');
+            const isDC = (funcData.cargo && funcData.cargo.toUpperCase().includes('DIRECTOR COMERCIAL')) || !!dcData;
+
+            if (isDC && dcSection) {
+                dcSection.classList.remove('hidden');
+                document.getElementById('modal-dc-cant-conv').innerText = dcData ? dcData.cantConvencionistas : 0;
+                document.getElementById('modal-dc-pct-conv').innerText = dcData ? (dcData.pctConvencionistas.toFixed(2) + '%') : '0.00%';
+                document.getElementById('modal-dc-pts-cump').innerText = dcData ? dcData.puntosCumpPond : 0;
+                document.getElementById('modal-dc-pts-cant').innerText = dcData ? dcData.puntosCantConv : 0;
+                document.getElementById('modal-dc-pts-pct').innerText = dcData ? dcData.puntosPctConv : 0;
+                document.getElementById('modal-dc-total-pts').innerText = dcData ? dcData.totalPuntos.toFixed(1) : '0.0';
+                document.getElementById('modal-dc-cupo').innerText = dcData ? dcData.cupoConvencion : funcData.cupo;
+            } else if (dcSection) {
+                dcSection.classList.add('hidden');
+            }
+
+            const formatNumberInt = (val) => {
+                let num = Math.round(Number(val) || 0);
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            };
+
+            let totalProyYTD = 0;
+            let totalRealYTD = 0;
+            details.forEach(item => {
+                totalProyYTD += item.proyeccion.reduce((a, b) => a + b, 0);
+                totalRealYTD += item.real.reduce((a, b) => a + b, 0);
+            });
+
+            document.getElementById('modal-kpi-proy').innerText = formatNumberInt(totalProyYTD);
+            document.getElementById('modal-kpi-real').innerText = formatNumberInt(totalRealYTD);
+
+            const ramos = ['TODOS', ...new Set(details.map(d => d.ramo))];
+            const tipos = ['TODOS', ...new Set(details.map(d => d.tipo))];
+
+            const ramoSelect = document.getElementById('modal-filter-ramo');
+            const tipoSelect = document.getElementById('modal-filter-tipo');
+
+            ramoSelect.innerHTML = ramos.map(r => `<option value="${r}">${r === 'TODOS' ? 'Todos los Ramos' : r}</option>`).join('');
+            tipoSelect.innerHTML = tipos.map(t => `<option value="${t}">${t === 'TODOS' ? 'Todos los Tipos' : t}</option>`).join('');
+
+            filterModalDetailTable();
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.filterModalDetailTable = function() {
+            if (!currentModalFuncionario) return;
+
+            const selectedRamo = document.getElementById('modal-filter-ramo').value;
+            const selectedTipo = document.getElementById('modal-filter-tipo').value;
+
+            const allDetails = monthlyDetailMap[currentModalFuncionario.funcionario] || monthlyDetailMap[normalizeName(currentModalFuncionario.funcionario)] || [];
+            const filteredDetails = allDetails.filter(d => {
+                const matchRamo = selectedRamo === 'TODOS' || d.ramo === selectedRamo;
+                const matchTipo = selectedTipo === 'TODOS' || d.tipo === selectedTipo;
+                return matchRamo && matchTipo;
+            });
+
+            const tbody = document.getElementById('modal-detail-tbody');
+            tbody.innerHTML = '';
+
+            if (filteredDetails.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="30" class="text-center py-6 text-slate-400 italic">No hay registros para este filtro</td></tr>`;
+                return;
+            }
+
+            const formatNumberInt = (val) => {
+                let num = Math.round(Number(val) || 0);
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            };
+
+            filteredDetails.forEach(item => {
+                const pesoArr = item.peso || [50, 50, 50, 50, 50, 50, 50];
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-emerald-50/40 transition border-b border-slate-200 text-xs font-medium text-slate-800";
+
+                let monthColumnsHtml = '';
+                for (let i = 0; i < 7; i++) {
+                    const pesoVal = pesoArr[i] !== undefined ? pesoArr[i] : 50;
+                    const proyVal = item.proyeccion[i] !== undefined ? item.proyeccion[i] : 0;
+                    const realVal = item.real[i] !== undefined ? item.real[i] : 0;
+                    const isSuccess = realVal >= proyVal && proyVal > 0;
+                    const cumpPct = proyVal > 0 ? (realVal / proyVal * 100).toFixed(1) + '%' : (realVal > 0 ? '100.0%' : '0.0%');
+
+                    monthColumnsHtml += `
+                        <td class="py-2.5 px-1.5 text-center font-semibold text-slate-600 bg-slate-50/80 border-r border-slate-200 text-[10px]">${Number(pesoVal).toFixed(0)}%</td>
+                        ${modalMetricView === 'AMBOS' ? `<td class="py-2.5 px-2 text-center text-slate-700 border-r border-slate-200 whitespace-nowrap text-[11px] font-medium">${formatNumberInt(proyVal)}</td>` : ''}
+                        <td class="py-2.5 px-2 text-center font-bold ${isSuccess ? 'text-bolivar-darkGreen bg-emerald-50/60' : 'text-slate-800'} border-r border-slate-200 whitespace-nowrap text-[11px]">${formatNumberInt(realVal)}</td>
+                        <td class="py-2.5 px-1.5 text-center font-bold ${isSuccess ? 'text-bolivar-green bg-emerald-100/70' : 'text-slate-600 bg-slate-50/50'} ${i < 6 ? 'border-r border-slate-300' : ''} whitespace-nowrap text-[11px]">${cumpPct}</td>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200 bg-white sticky left-0 z-10 shadow-sm text-center whitespace-nowrap">${item.ramo}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200 bg-white sticky left-[120px] z-10 shadow-sm text-center whitespace-nowrap">${item.tipo}</td>
+                    ${monthColumnsHtml}
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.closeDetailModal = function() {
+            document.getElementById('detail-modal').classList.add('hidden');
+            currentModalFuncionario = null;
+        };
+
+        window.setModalMetricView = function(mode) {
+            modalMetricView = mode;
+            const btnAmbos = document.getElementById('btn-metric-ambos');
+            const btnReal = document.getElementById('btn-metric-real');
+
+            if (mode === 'AMBOS') {
+                btnAmbos.className = "px-2.5 py-1 rounded-md text-xs font-bold transition bg-bolivar-green text-white shadow-sm";
+                btnReal.className = "px-2.5 py-1 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition";
+            } else {
+                btnReal.className = "px-2.5 py-1 rounded-md text-xs font-bold transition bg-bolivar-green text-white shadow-sm";
+                btnAmbos.className = "px-2.5 py-1 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition";
+            }
+
+            filterModalDetailTable();
+        };
+
+        window.toggleDropdownMenu = function(key, event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById(`dd-menu-${key}`);
+            const arrow = document.getElementById(`dd-arrow-${key}`);
+            const isHidden = menu.classList.contains('hidden');
+
+            closeAllDropdowns();
+
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                if (arrow) arrow.classList.add('rotate-180');
+            }
+        };
+
+        function closeAllDropdowns() {
+            ['categoria', 'regional', 'localidad', 'cupo'].forEach(key => {
+                const menu = document.getElementById(`dd-menu-${key}`);
+                const arrow = document.getElementById(`dd-arrow-${key}`);
+                if (menu) menu.classList.add('hidden');
+                if (arrow) arrow.classList.remove('rotate-180');
+            });
+        }
+
+        window.filterDropdownSearch = function(key) {
+            const searchInput = document.getElementById(`dd-search-${key}`);
+            if (!searchInput) return;
+            const term = searchInput.value.toLowerCase().trim();
+            const optionsContainer = document.getElementById(`dd-options-${key}`);
+            if (!optionsContainer) return;
+
+            const items = optionsContainer.querySelectorAll('.dropdown-opt-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(term)) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        };
+
+        function renderSlicersAndDropdowns() {
+            const categories = [...new Set(masterData.map(d => d.categoria).filter(Boolean))].sort();
+            const regionals = [...new Set(masterData.map(d => d.regional).filter(Boolean))].sort();
+            const localidades = [...new Set(masterData.map(d => d.localidad).filter(Boolean))].sort();
+            const cupos = ["SI", "NO"];
+
+            renderFilterComponent('categoria', categories);
+            renderFilterComponent('regional', regionals);
+            renderFilterComponent('localidad', localidades);
+            renderFilterComponent('cupo', cupos);
+        }
+
+        function renderFilterComponent(key, options) {
+            const ddOptionsContainer = document.getElementById(`dd-options-${key}`);
+            if (ddOptionsContainer) {
+                ddOptionsContainer.innerHTML = options.map(opt => {
+                    const isSelected = selectedFilters[key].has(opt);
+                    return `
+                        <div onclick="toggleFilterOption('${key}', '${opt.replace(/'/g, "\\'")}')" 
+                             class="dropdown-opt-item px-2.5 py-1.5 rounded-lg flex items-center justify-between cursor-pointer transition text-xs ${isSelected ? 'bg-emerald-100 text-emerald-900 font-bold border border-emerald-300' : 'hover:bg-slate-100 text-slate-700'}">
+                            <span class="truncate">${opt}</span>
+                            ${isSelected ? '<i data-lucide="check" class="w-3.5 h-3.5 text-bolivar-green"></i>' : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        window.toggleFilterOption = function(key, val) {
+            if (selectedFilters[key].has(val)) {
+                selectedFilters[key].delete(val);
+            } else {
+                selectedFilters[key].add(val);
+            }
+            applyFilters();
+            renderSlicersAndDropdowns();
+        };
+
+        window.clearSlicer = function(key) {
+            selectedFilters[key].clear();
+            applyFilters();
+            renderSlicersAndDropdowns();
+        };
+
+        function updateDropdownLabels() {
+            ['categoria', 'regional', 'localidad', 'cupo'].forEach(key => {
+                const countBadge = document.getElementById(`dd-count-${key}`);
+                const label = document.getElementById(`dd-label-${key}`);
+                const selectedCount = selectedFilters[key].size;
+
+                if (countBadge) {
+                    if (selectedCount > 0) {
+                        countBadge.innerText = selectedCount;
+                        countBadge.classList.remove('hidden');
+                    } else {
+                        countBadge.classList.add('hidden');
+                    }
+                }
+
+                if (label) {
+                    if (selectedCount === 0) {
+                        const defaults = {
+                            categoria: 'Todas las Categorías',
+                            regional: 'Todas las Regionales',
+                            localidad: 'Todas las Localidades',
+                            cupo: 'Todos (SI / NO)'
+                        };
+                        label.innerText = defaults[key];
+                    } else if (selectedCount === 1) {
+                        label.innerText = [...selectedFilters[key]][0];
+                    } else {
+                        label.innerText = `${selectedCount} seleccionados`;
+                    }
+                }
+            });
+        }
+
+        function updateCounters() {
+            const recordCountEl = document.getElementById('record-count');
+            const totalCountEl = document.getElementById('total-count');
+            const cupoYesCountEl = document.getElementById('cupo-yes-count');
+            const cupoNoCountEl = document.getElementById('cupo-no-count');
+            const activeFiltersTagEl = document.getElementById('active-filters-tag');
+
+            if (recordCountEl) recordCountEl.innerText = filteredData.length;
+            if (totalCountEl) totalCountEl.innerText = masterData.length;
+
+            const yesCount = filteredData.filter(d => String(d.cupo).trim().toUpperCase() === 'SI').length;
+            const noCount = filteredData.filter(d => String(d.cupo).trim().toUpperCase() === 'NO').length;
+
+            if (cupoYesCountEl) cupoYesCountEl.innerText = yesCount;
+            if (cupoNoCountEl) cupoNoCountEl.innerText = noCount;
+
+            if (activeFiltersTagEl) {
+                const activeFilters = [];
+                if (selectedFilters.categoria.size > 0) activeFilters.push(`${selectedFilters.categoria.size} Categ.`);
+                if (selectedFilters.regional.size > 0) activeFilters.push(`${selectedFilters.regional.size} Reg.`);
+                if (selectedFilters.localidad.size > 0) activeFilters.push(`${selectedFilters.localidad.size} Loc.`);
+                if (selectedFilters.cupo.size > 0) activeFilters.push(`Cupo: ${[...selectedFilters.cupo].join(',')}`);
+
+                const searchVal = document.getElementById('global-search') ? document.getElementById('global-search').value.trim() : '';
+                if (searchVal) activeFilters.push(`Búsqueda: "${searchVal}"`);
+
+                if (activeFilters.length > 0) {
+                    activeFiltersTagEl.innerText = `Filtros activos: ${activeFilters.join(' • ')}`;
+                    activeFiltersTagEl.className = "text-[11px] font-bold text-bolivar-green border-l border-slate-200 pl-3";
+                } else {
+                    activeFiltersTagEl.innerText = "Sin filtros aplicados";
+                    activeFiltersTagEl.className = "text-[11px] font-medium text-slate-500 italic border-l border-slate-200 pl-3";
+                }
+            }
+        }
+
+        window.sortTable = function(column) {
+            if (currentSort.column === column) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.column = column;
+                currentSort.asc = true;
+            }
+            applyFilters();
+        };
+
+        function showToast(title, msg, type = 'success') {
+            const toast = document.getElementById('toast-notification');
+            const titleEl = document.getElementById('toast-title');
+            const msgEl = document.getElementById('toast-msg');
+            const iconEl = document.getElementById('toast-icon');
+
+            if (!toast) return;
+
+            titleEl.innerText = title;
+            msgEl.innerText = msg;
+
+            if (type === 'error') {
+                iconEl.className = 'text-red-400';
+                iconEl.innerHTML = `<i data-lucide="alert-circle" class="w-5 h-5"></i>`;
+            } else if (type === 'warning') {
+                iconEl.className = 'text-amber-400';
+                iconEl.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5"></i>`;
+            } else {
+                iconEl.className = 'text-bolivar-yellow';
+                iconEl.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5"></i>`;
+            }
+
+            lucide.createIcons();
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                hideToast();
+            }, 4000);
+        }
+
+        window.hideToast = function() {
+            const toast = document.getElementById('toast-notification');
+            if (toast) toast.classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
